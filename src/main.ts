@@ -13,6 +13,8 @@ const WALL_INTERVAL = 1200; // ms
 
 let score = 0;
 let scoreText: Phaser.GameObjects.Text;
+let bestScore = Number(localStorage.getItem('bestScore') || 0);
+let bestScoreText: Phaser.GameObjects.Text;
 
 class MainScene extends Phaser.Scene {
   ball!: Phaser.Physics.Arcade.Image;
@@ -55,6 +57,8 @@ class MainScene extends Phaser.Scene {
 
     // Add score text above all game objects
     scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '28px', color: '#fff' })
+      .setDepth(10);
+    bestScoreText = this.add.text(20, 60, `Best: ${bestScore}`, { fontSize: '22px', color: '#ff0' })
       .setDepth(10);
 
     this.physics.add.overlap(this.ball, this.walls, this.handleGameOver, undefined, this);
@@ -100,14 +104,14 @@ class MainScene extends Phaser.Scene {
     this.gameOver = true;
     this.ball.setTint(0xff0000);
     this.physics.pause();
-    // Show final score and retry button
-    const gameOverText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 40, `Game Over`, {
+    // Show final score, best score, and retry button
+    const gameOverText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 60, `Game Over`, {
       fontSize: '48px',
       color: '#fff',
       align: 'center',
     }).setOrigin(0.5);
-    const scoreDisplay = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 10, `Score: ${score}`, {
-      fontSize: '36px',
+    const scoreDisplay = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, `Score: ${score}\nBest: ${bestScore}`, {
+      fontSize: '32px',
       color: '#fff',
       align: 'center',
     }).setOrigin(0.5);
@@ -133,6 +137,11 @@ class MainScene extends Phaser.Scene {
         if (!this.gameOver) {
           score++;
           scoreText.setText('Score: ' + score);
+          if (score > bestScore) {
+            bestScore = score;
+            localStorage.setItem('bestScore', String(bestScore));
+            bestScoreText.setText(`Best: ${bestScore}`);
+          }
         }
       }
     });
