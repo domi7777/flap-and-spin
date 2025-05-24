@@ -31,7 +31,9 @@ class MainScene extends Phaser.Scene {
     score = 0;
     this.gameOver = false;
     this.physics.world.gravity.y = GRAVITY;
-    this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x222222);
+
+    // Add background rectangle (keep it below everything else)
+    this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x222222).setDepth(0);
 
     // Use a graphics-generated texture for the ball
     const ballGfx = this.add.graphics();
@@ -51,7 +53,9 @@ class MainScene extends Phaser.Scene {
     this.input.on('pointerdown', this.bounce, this);
     this.input.keyboard?.on('keydown-SPACE', this.bounce, this);
 
-    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '28px', color: '#fff' });
+    // Add score text above all game objects
+    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '28px', color: '#fff' })
+      .setDepth(10);
 
     this.physics.add.overlap(this.ball, this.walls, this.handleGameOver, undefined, this);
   }
@@ -89,16 +93,6 @@ class MainScene extends Phaser.Scene {
     topWall.body.onWorldBounds = true;
     bottomWall.body.checkWorldBounds = true;
     bottomWall.body.onWorldBounds = true;
-    topWall.body.world.on('worldbounds', (body: any) => {
-      if (body.gameObject === topWall || body.gameObject === bottomWall) {
-        topWall.destroy();
-        bottomWall.destroy();
-        if (!this.gameOver) {
-          score++;
-          scoreText.setText('Score: ' + score);
-        }
-      }
-    });
   }
 
   handleGameOver() {
@@ -106,18 +100,42 @@ class MainScene extends Phaser.Scene {
     this.gameOver = true;
     this.ball.setTint(0xff0000);
     this.physics.pause();
-    this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, 'Game Over\nClick to Restart', {
-      fontSize: '40px',
+    // Show final score and retry button
+    const gameOverText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 40, `Game Over`, {
+      fontSize: '48px',
       color: '#fff',
       align: 'center',
     }).setOrigin(0.5);
-    this.input.once('pointerdown', () => this.scene.restart(), this);
+    const scoreDisplay = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 10, `Score: ${score}`, {
+      fontSize: '36px',
+      color: '#fff',
+      align: 'center',
+    }).setOrigin(0.5);
+    const retryButton = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 70, 'Retry', {
+      fontSize: '32px',
+      color: '#00eaff',
+      backgroundColor: '#222',
+      padding: { left: 24, right: 24, top: 8, bottom: 8 },
+      align: 'center',
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    retryButton.on('pointerdown', () => this.scene.restart());
   }
 
   update() {
     if (this.ball.y > GAME_HEIGHT - BALL_RADIUS || this.ball.y < BALL_RADIUS) {
       this.handleGameOver();
     }
+    // Remove walls and increment score when they leave the right side of the screen
+    this.walls.getChildren().forEach((wall) => {
+      const wallBody = (wall as Phaser.Physics.Arcade.Image).body as Phaser.Physics.Arcade.Body;
+      if (wallBody && wallBody.x > GAME_WIDTH) {
+        wall.destroy();
+        if (!this.gameOver) {
+          score++;
+          scoreText.setText('Score: ' + score);
+        }
+      }
+    });
   }
 }
 
