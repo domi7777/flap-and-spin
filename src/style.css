@@ -1,8 +1,20 @@
-/* Remove all styles except for #game-container to ensure Phaser canvas displays correctly */
-#game-container {
+body, html {
   width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 0;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #222;
+}
+
+#game-container {
+  width: 800px;
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #444;
 }
