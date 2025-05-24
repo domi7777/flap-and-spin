@@ -105,12 +105,12 @@ class MainScene extends Phaser.Scene {
     this.ball.setTint(0xff0000);
     this.physics.pause();
     // Show final score, best score, and retry button
-    const gameOverText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 60, `Game Over`, {
+    this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 60, `Game Over`, {
       fontSize: '48px',
       color: '#fff',
       align: 'center',
     }).setOrigin(0.5);
-    const scoreDisplay = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, `Score: ${score}\nBest: ${bestScore}`, {
+    this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, `Score: ${score}\nBest: ${bestScore}`, {
       fontSize: '32px',
       color: '#fff',
       align: 'center',
