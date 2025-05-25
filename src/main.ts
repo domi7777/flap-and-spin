@@ -26,6 +26,9 @@ class MainScene extends Phaser.Scene {
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   lastWallTime = 0;
   gameOver = false;
+  uiCamera!: Phaser.Cameras.Scene2D.Camera;
+  gameCamera!: Phaser.Cameras.Scene2D.Camera;
+  uiElements: Phaser.GameObjects.Text[] = [];
 
   constructor() {
     super('MainScene');
@@ -38,8 +41,13 @@ class MainScene extends Phaser.Scene {
     this.gameOver = false;
     this.physics.world.gravity.y = GRAVITY;
 
+    // Setup cameras first
+    this.gameCamera = this.cameras.main;
+    this.uiCamera = this.cameras.add(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
     // Add background rectangle (keep it below everything else)
-    this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x222222).setDepth(0);
+    const bg = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x222222).setDepth(0);
+    this.uiCamera.ignore(bg);
 
     // Use a graphics-generated texture for the ball
     const ballGfx = this.add.graphics();
@@ -52,6 +60,7 @@ class MainScene extends Phaser.Scene {
       .setDisplaySize(BALL_RADIUS*2, BALL_RADIUS*2)
       .setBounce(0.5)
       .setCollideWorldBounds(true);
+    this.uiCamera.ignore(this.ball);
 
     this.walls = this.physics.add.group();
     this.time.addEvent({ delay: WALL_INTERVAL, callback: this.spawnWall, callbackScope: this, loop: true });
@@ -64,6 +73,10 @@ class MainScene extends Phaser.Scene {
       .setDepth(10);
     bestScoreText = this.add.text(20, 60, `Best: ${bestScore}`, { fontSize: '22px', color: '#ff0' })
       .setDepth(10);
+    this.uiElements = [scoreText, bestScoreText];
+    
+    // Make UI elements visible only to UI camera
+    this.gameCamera.ignore(this.uiElements);
 
     this.physics.add.overlap(this.ball, this.walls, this.handleGameOver, undefined, this);
   }
@@ -101,6 +114,9 @@ class MainScene extends Phaser.Scene {
     topWall.body.onWorldBounds = true;
     bottomWall.body.checkWorldBounds = true;
     bottomWall.body.onWorldBounds = true;
+
+    // Make sure walls are only visible to game camera
+    this.uiCamera.ignore([topWall, bottomWall]);
   }
 
   handleGameOver() {
@@ -110,12 +126,12 @@ class MainScene extends Phaser.Scene {
     this.ball.setTint(0xff0000);
     this.physics.pause();
     // Show final score, best score, and retry button
-    this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 60, `Game Over`, {
+    const gameOverText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 60, `Game Over`, {
       fontSize: '48px',
       color: '#fff',
       align: 'center',
     }).setOrigin(0.5);
-    this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, `Score: ${score}\nBest: ${bestScore}`, {
+    const finalScoreText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, `Score: ${score}\nBest: ${bestScore}`, {
       fontSize: '32px',
       color: '#fff',
       align: 'center',
@@ -128,6 +144,10 @@ class MainScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     retryButton.on('pointerdown', () => this.scene.restart());
+
+    // Add to UI elements and update camera visibility
+    this.uiElements.push(gameOverText, finalScoreText, retryButton);
+    this.gameCamera.ignore(this.uiElements);
   }
 
   update(_time: number, delta: number): void {
@@ -152,8 +172,9 @@ class MainScene extends Phaser.Scene {
       }
     });
     // Start camera rotation when score reaches 5
-    if (score === 5 && !isRotating && rotationProgress === 0) {
+    if (score >= 5 && !isRotating && rotationProgress === 0) {
       isRotating = true;
+      console.log('Starting camera rotation');
       rotationProgress = 0;
     }
     // Handle progressive camera rotation
