@@ -1,8 +1,8 @@
 import './style.css'
 import Phaser from 'phaser';
 
-const GAME_WIDTH = 800;
-const GAME_HEIGHT = 600;
+const GAME_WIDTH = Math.min(window.innerWidth, 800);
+const GAME_HEIGHT = Math.min(window.innerHeight, 800);
 const BALL_RADIUS = 20;
 const GRAVITY = 800;
 const BOUNCE_VELOCITY = -350;
