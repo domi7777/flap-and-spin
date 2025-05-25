@@ -19,6 +19,7 @@ let bestScoreText: Phaser.GameObjects.Text;
 let isRotating = false;
 let rotationProgress = 0;
 const ROTATION_DURATION = 2000; // ms
+let currentRotation = 0; // Track current rotation angle
 
 class MainScene extends Phaser.Scene {
   ball!: Phaser.Physics.Arcade.Image;
@@ -68,10 +69,13 @@ class MainScene extends Phaser.Scene {
     this.input.on('pointerdown', this.bounce, this);
     this.input.keyboard?.on('keydown-SPACE', this.bounce, this);
 
+    // Responsive text scaling
+    const fontSize = Math.max(16, GAME_WIDTH / 40); // Scale font size based on screen width
+
     // Add score text above all game objects
-    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '28px', color: '#fff' })
+    scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: `${fontSize}px`, color: '#fff' })
       .setDepth(10);
-    bestScoreText = this.add.text(20, 60, `Best: ${bestScore}`, { fontSize: '22px', color: '#ff0' })
+    bestScoreText = this.add.text(20, 60, `Best: ${bestScore}`, { fontSize: `${fontSize * 0.8}px`, color: '#ff0' })
       .setDepth(10);
     this.uiElements = [scoreText, bestScoreText];
     
@@ -151,10 +155,10 @@ class MainScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    // console.log('Update called', this.ball.y, this.ball.x, this.gameOver);
     if (this.ball.y > GAME_HEIGHT - BALL_RADIUS || this.ball.y < BALL_RADIUS) {
       this.handleGameOver();
     }
+
     // Remove walls and increment score when they leave the right side of the screen
     this.walls.getChildren().forEach((wall: Phaser.GameObjects.GameObject) => {
       const wallBody = (wall as Phaser.Physics.Arcade.Image).body as Phaser.Physics.Arcade.Body;
@@ -171,19 +175,27 @@ class MainScene extends Phaser.Scene {
         }
       }
     });
-    // Start camera rotation when score reaches 5
-    if (score >= 5 && !isRotating && rotationProgress === 0) {
+
+    // Start camera rotation every 10 points
+    const targetRotation = Math.floor(score / 10) * (Math.PI / 2); // 90 degrees for every 10 points
+    if (targetRotation !== currentRotation && !isRotating) {
       isRotating = true;
-      console.log('Starting camera rotation');
-      rotationProgress = 0;
+      rotationProgress = 0; // Reset rotation progress
+      console.log('Starting camera rotation at score:', score, 'target:', targetRotation * 180 / Math.PI + '°');
     }
+
     // Handle progressive camera rotation
-    if (isRotating && rotationProgress < 1) {
+    if (isRotating) {
       rotationProgress += delta / ROTATION_DURATION;
       if (rotationProgress > 1) rotationProgress = 1;
-      this.cameras.main.setRotation(Math.PI / 2 * rotationProgress);
+
+      // Interpolate between current and target rotation
+      const newRotation = currentRotation + (targetRotation - currentRotation) * rotationProgress;
+      this.cameras.main.setRotation(newRotation);
+
       if (rotationProgress === 1) {
         isRotating = false;
+        currentRotation = targetRotation; // Update current rotation after animation completes
       }
     }
   }
@@ -201,6 +213,10 @@ const config: Phaser.Types.Core.GameConfig = {
       gravity: { x: 0, y: GRAVITY },
       debug: false,
     },
+  },
+  scale: {
+    mode: Phaser.Scale.FIT, // Ensure the game scales to fit the screen
+    autoCenter: Phaser.Scale.CENTER_BOTH, // Center the game on the screen
   },
   scene: MainScene,
 };
