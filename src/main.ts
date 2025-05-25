@@ -20,6 +20,7 @@ let isRotating = false;
 let rotationProgress = 0;
 const ROTATION_DURATION = 2000; // ms
 let currentRotation = 0; // Track current rotation angle
+let currentWallColor = 0xff4444; // Default wall color
 
 class MainScene extends Phaser.Scene {
   ball!: Phaser.Physics.Arcade.Image;
@@ -96,7 +97,7 @@ class MainScene extends Phaser.Scene {
     const gapY = Phaser.Math.Between(100, GAME_HEIGHT - 100 - WALL_GAP);
     // Use a graphics-generated texture for the wall
     const wallGfx = this.add.graphics();
-    wallGfx.fillStyle(0xff4444, 1);
+    wallGfx.fillStyle(currentWallColor, 1); // Use current wall color
     wallGfx.fillRect(0, 0, WALL_WIDTH, 100);
     wallGfx.generateTexture('wall', WALL_WIDTH, 100);
     wallGfx.destroy();
@@ -193,9 +194,29 @@ class MainScene extends Phaser.Scene {
       const newRotation = currentRotation + (targetRotation - currentRotation) * rotationProgress;
       this.cameras.main.setRotation(newRotation);
 
+      // Determine color based on cardinal direction
+      const cardinalColors = [0xff4444, 0x44ff44, 0x4444ff, 0xffff44]; // Red, Green, Blue, Yellow
+      const currentCardinalIndex = Math.floor(currentRotation / (Math.PI / 2)) % 4;
+      const targetCardinalIndex = Math.floor(targetRotation / (Math.PI / 2)) % 4;
+      const startColor = Phaser.Display.Color.ValueToColor(cardinalColors[currentCardinalIndex]);
+      const endColor = Phaser.Display.Color.ValueToColor(cardinalColors[targetCardinalIndex]);
+
+      // Interpolate color between current and target cardinal direction
+      const colorProgress = Phaser.Display.Color.Interpolate.ColorWithColor(
+        startColor,
+        endColor,
+        100, // Total steps (scaled to 100 for smoother transition)
+        rotationProgress * 100 // Current step
+      );
+      const newColor = Phaser.Display.Color.GetColor(colorProgress.r, colorProgress.g, colorProgress.b);
+      this.walls.getChildren().forEach((wall: Phaser.GameObjects.GameObject) => {
+        (wall as Phaser.Physics.Arcade.Image).setTint(newColor);
+      });
+
       if (rotationProgress === 1) {
         isRotating = false;
         currentRotation = targetRotation; // Update current rotation after animation completes
+        currentWallColor = Phaser.Display.Color.GetColor(colorProgress.r, colorProgress.g, colorProgress.b); // Save final color
       }
     }
   }
