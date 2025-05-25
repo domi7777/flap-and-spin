@@ -16,6 +16,10 @@ let scoreText: Phaser.GameObjects.Text;
 let bestScore = Number(localStorage.getItem('bestScore') || 0);
 let bestScoreText: Phaser.GameObjects.Text;
 
+let isRotating = false;
+let rotationProgress = 0;
+const ROTATION_DURATION = 2000; // ms
+
 class MainScene extends Phaser.Scene {
   ball!: Phaser.Physics.Arcade.Image;
   walls!: Phaser.Physics.Arcade.Group;
@@ -100,6 +104,7 @@ class MainScene extends Phaser.Scene {
   }
 
   handleGameOver() {
+    console.warn('Game Over');
     if (this.gameOver) return;
     this.gameOver = true;
     this.ball.setTint(0xff0000);
@@ -125,7 +130,8 @@ class MainScene extends Phaser.Scene {
     retryButton.on('pointerdown', () => this.scene.restart());
   }
 
-  update() {
+  update(time, delta) {
+    // console.log('Update called', this.ball.y, this.ball.x, this.gameOver);
     if (this.ball.y > GAME_HEIGHT - BALL_RADIUS || this.ball.y < BALL_RADIUS) {
       this.handleGameOver();
     }
@@ -145,6 +151,20 @@ class MainScene extends Phaser.Scene {
         }
       }
     });
+    // Start camera rotation when score reaches 5
+    if (score === 5 && !isRotating && rotationProgress === 0) {
+      isRotating = true;
+      rotationProgress = 0;
+    }
+    // Handle progressive camera rotation
+    if (isRotating && rotationProgress < 1) {
+      rotationProgress += delta / ROTATION_DURATION;
+      if (rotationProgress > 1) rotationProgress = 1;
+      this.cameras.main.setRotation(Math.PI / 2 * rotationProgress);
+      if (rotationProgress === 1) {
+        isRotating = false;
+      }
+    }
   }
 }
 
