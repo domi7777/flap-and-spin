@@ -130,13 +130,13 @@ class MainScene extends Phaser.Scene {
     retryButton.on('pointerdown', () => this.scene.restart());
   }
 
-  update(time, delta) {
+  update(_time: number, delta: number): void {
     // console.log('Update called', this.ball.y, this.ball.x, this.gameOver);
     if (this.ball.y > GAME_HEIGHT - BALL_RADIUS || this.ball.y < BALL_RADIUS) {
       this.handleGameOver();
     }
     // Remove walls and increment score when they leave the right side of the screen
-    this.walls.getChildren().forEach((wall) => {
+    this.walls.getChildren().forEach((wall: Phaser.GameObjects.GameObject) => {
       const wallBody = (wall as Phaser.Physics.Arcade.Image).body as Phaser.Physics.Arcade.Body;
       if (wallBody && wallBody.x > GAME_WIDTH) {
         wall.destroy();
