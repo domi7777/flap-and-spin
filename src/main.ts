@@ -8,7 +8,7 @@ const BALL_RADIUS = 20;
 const GRAVITY = 800;
 const BOUNCE_VELOCITY = -350;
 const WALL_SPEED = 200;
-const WALL_GAP = 180;
+const WALL_GAP = 280;
 const WALL_WIDTH = 40;
 const WALL_INTERVAL = 1200; // ms
 
@@ -100,9 +100,14 @@ class MainScene extends Phaser.Scene {
 
   spawnWall() {
     if (this.gameOver) return;
-    // Adjust gap size and wall speed based on difficulty
+
+    // Adjust gap size dynamically based on score
+    const minGap = 180; // Minimum gap size to keep the game playable
+    const maxGap = WALL_GAP; // Initial gap size
+    const adjustedWallGap = Math.max(minGap, maxGap - score * 5); // Decrease gap size as score increases
+
+    // Adjust wall speed based on difficulty multiplier
     const adjustedWallSpeed = WALL_SPEED * difficultyMultiplier;
-    const adjustedWallGap = WALL_GAP / difficultyMultiplier;
 
     // Random gap position
     const gapY = Phaser.Math.Between(100, GAME_HEIGHT - 100 - adjustedWallGap);
