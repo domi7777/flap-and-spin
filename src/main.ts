@@ -82,7 +82,7 @@ class MainScene extends Phaser.Scene {
     bestScoreText = this.add.text(20, 60, `Best: ${bestScore}`, { fontSize: `${fontSize * 0.8}px`, color: '#ff0' })
       .setDepth(10);
     // Add death count text next to the score
-    deathCountText = this.add.text(20, 100, 'Deaths: 0', {
+    deathCountText = this.add.text(20, 100, 'Deaths: ' + deathCount,  {
       fontSize: `${fontSize}px`,
       color: '#fff',
     }).setDepth(10);
