@@ -16,6 +16,9 @@ let scoreText: Phaser.GameObjects.Text;
 let bestScore = Number(localStorage.getItem('bestScore') || 0);
 let bestScoreText: Phaser.GameObjects.Text;
 
+let deathCount = 0;
+let deathCountText: Phaser.GameObjects.Text;
+
 let isRotating = false;
 let rotationProgress = 0;
 const ROTATION_DURATION = 2000; // ms
@@ -78,7 +81,12 @@ class MainScene extends Phaser.Scene {
       .setDepth(10);
     bestScoreText = this.add.text(20, 60, `Best: ${bestScore}`, { fontSize: `${fontSize * 0.8}px`, color: '#ff0' })
       .setDepth(10);
-    this.uiElements = [scoreText, bestScoreText];
+    // Add death count text next to the score
+    deathCountText = this.add.text(20, 100, 'Deaths: 0', {
+      fontSize: `${fontSize}px`,
+      color: '#fff',
+    }).setDepth(10);
+    this.uiElements = [scoreText, bestScoreText, deathCountText];
     
     // Make UI elements visible only to UI camera
     this.gameCamera.ignore(this.uiElements);
@@ -128,6 +136,8 @@ class MainScene extends Phaser.Scene {
     console.warn('Game Over');
     if (this.gameOver) return;
     this.gameOver = true;
+    deathCount++;
+    deathCountText.setText(`Deaths: ${deathCount}`);
     this.ball.setTint(0xff0000);
     this.physics.pause();
     // Show final score, best score, and retry button
