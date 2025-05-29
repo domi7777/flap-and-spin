@@ -1,5 +1,6 @@
 import './style.css'
 import Phaser from 'phaser';
+import { CameraManager } from './CameraManager';
 
 const GAME_WIDTH = Math.min(window.innerWidth, 800);
 const GAME_HEIGHT = Math.min(window.innerHeight - 30, 800);
@@ -19,11 +20,8 @@ let bestScoreText: Phaser.GameObjects.Text;
 let deathCount = Number(localStorage.getItem('deathCount') || 0);
 let deathCountText: Phaser.GameObjects.Text;
 
-let isRotating = false;
-let rotationProgress = 0;
-const ROTATION_DURATION = 2000; // ms
-let currentRotation = 0; // Track current rotation angle
 let currentWallColor = 0xff4444; // Default wall color
+let difficultyMultiplier = 1;
 
 class MainScene extends Phaser.Scene {
   ball!: Phaser.Physics.Arcade.Image;
@@ -34,6 +32,7 @@ class MainScene extends Phaser.Scene {
   uiCamera!: Phaser.Cameras.Scene2D.Camera;
   gameCamera!: Phaser.Cameras.Scene2D.Camera;
   uiElements: Phaser.GameObjects.Text[] = [];
+  cameraManager!: CameraManager;
 
   constructor() {
     super('MainScene');
@@ -68,6 +67,8 @@ class MainScene extends Phaser.Scene {
     this.uiCamera.ignore(this.ball);
 
     this.walls = this.physics.add.group();
+    this.cameraManager = new CameraManager(this);
+
     this.time.addEvent({ delay: WALL_INTERVAL, callback: this.spawnWall, callbackScope: this, loop: true });
 
     this.input.on('pointerdown', this.bounce, this);
@@ -81,14 +82,12 @@ class MainScene extends Phaser.Scene {
       .setDepth(10);
     bestScoreText = this.add.text(20, 60, `Best: ${bestScore}`, { fontSize: `${fontSize * 0.8}px`, color: '#ff0' })
       .setDepth(10);
-    // Add death count text next to the score
-    deathCountText = this.add.text(20, 100, 'Deaths: ' + deathCount,  {
+    deathCountText = this.add.text(20, 100, 'Deaths: ' + deathCount, {
       fontSize: `${fontSize}px`,
       color: '#fff',
     }).setDepth(10);
     this.uiElements = [scoreText, bestScoreText, deathCountText];
-    
-    // Make UI elements visible only to UI camera
+
     this.gameCamera.ignore(this.uiElements);
 
     this.physics.add.overlap(this.ball, this.walls, this.handleGameOver, undefined, this);
@@ -101,8 +100,12 @@ class MainScene extends Phaser.Scene {
 
   spawnWall() {
     if (this.gameOver) return;
+    // Adjust gap size and wall speed based on difficulty
+    const adjustedWallSpeed = WALL_SPEED * difficultyMultiplier;
+    const adjustedWallGap = WALL_GAP / difficultyMultiplier;
+
     // Random gap position
-    const gapY = Phaser.Math.Between(100, GAME_HEIGHT - 100 - WALL_GAP);
+    const gapY = Phaser.Math.Between(100, GAME_HEIGHT - 100 - adjustedWallGap);
     // Use a graphics-generated texture for the wall
     const wallGfx = this.add.graphics();
     wallGfx.fillStyle(currentWallColor, 1); // Use current wall color
@@ -113,12 +116,12 @@ class MainScene extends Phaser.Scene {
     const topWall = this.walls.create(-WALL_WIDTH/2, gapY/2, 'wall')
       .setDisplaySize(WALL_WIDTH, gapY)
       .setImmovable(true)
-      .setVelocityX(WALL_SPEED);
+      .setVelocityX(adjustedWallSpeed);
     // Bottom wall
-    const bottomWall = this.walls.create(-WALL_WIDTH/2, gapY + WALL_GAP + (GAME_HEIGHT-gapY-WALL_GAP)/2, 'wall')
-      .setDisplaySize(WALL_WIDTH, GAME_HEIGHT-gapY-WALL_GAP)
+    const bottomWall = this.walls.create(-WALL_WIDTH/2, gapY + adjustedWallGap + (GAME_HEIGHT-gapY-adjustedWallGap)/2, 'wall')
+      .setDisplaySize(WALL_WIDTH, GAME_HEIGHT-gapY-adjustedWallGap)
       .setImmovable(true)
-      .setVelocityX(WALL_SPEED);
+      .setVelocityX(adjustedWallSpeed);
     // Ensure walls are not affected by gravity
     (topWall.body as Phaser.Physics.Arcade.Body).allowGravity = false;
     (bottomWall.body as Phaser.Physics.Arcade.Body).allowGravity = false;
@@ -185,52 +188,17 @@ class MainScene extends Phaser.Scene {
             localStorage.setItem('bestScore', String(bestScore));
             bestScoreText.setText(`Best: ${bestScore}`);
           }
+          this.cameraManager.startRotation(score); // Trigger camera rotation when score increases
+
+          // Increase difficulty every 10 points
+          if (score % 10 === 0) {
+            difficultyMultiplier += 0.1; // Increase multiplier
+          }
         }
       }
     });
 
-    // Start camera rotation every 10 points
-    const targetRotation = Math.floor(score / 10) * (Math.PI / 2); // 90 degrees for every 10 points
-    if (targetRotation !== currentRotation && !isRotating) {
-      isRotating = true;
-      rotationProgress = 0; // Reset rotation progress
-      console.log('Starting camera rotation at score:', score, 'target:', targetRotation * 180 / Math.PI + '°');
-    }
-
-    // Handle progressive camera rotation
-    if (isRotating) {
-      rotationProgress += delta / ROTATION_DURATION;
-      if (rotationProgress > 1) rotationProgress = 1;
-
-      // Interpolate between current and target rotation
-      const newRotation = currentRotation + (targetRotation - currentRotation) * rotationProgress;
-      this.cameras.main.setRotation(newRotation);
-
-      // Determine color based on cardinal direction
-      const cardinalColors = [0xff4444, 0x44ff44, 0x4444ff, 0xffff44]; // Red, Green, Blue, Yellow
-      const currentCardinalIndex = Math.floor(currentRotation / (Math.PI / 2)) % 4;
-      const targetCardinalIndex = Math.floor(targetRotation / (Math.PI / 2)) % 4;
-      const startColor = Phaser.Display.Color.ValueToColor(cardinalColors[currentCardinalIndex]);
-      const endColor = Phaser.Display.Color.ValueToColor(cardinalColors[targetCardinalIndex]);
-
-      // Interpolate color between current and target cardinal direction
-      const colorProgress = Phaser.Display.Color.Interpolate.ColorWithColor(
-        startColor,
-        endColor,
-        100, // Total steps (scaled to 100 for smoother transition)
-        rotationProgress * 100 // Current step
-      );
-      const newColor = Phaser.Display.Color.GetColor(colorProgress.r, colorProgress.g, colorProgress.b);
-      this.walls.getChildren().forEach((wall: Phaser.GameObjects.GameObject) => {
-        (wall as Phaser.Physics.Arcade.Image).setTint(newColor);
-      });
-
-      if (rotationProgress === 1) {
-        isRotating = false;
-        currentRotation = targetRotation; // Update current rotation after animation completes
-        currentWallColor = Phaser.Display.Color.GetColor(colorProgress.r, colorProgress.g, colorProgress.b); // Save final color
-      }
-    }
+    currentWallColor = this.cameraManager.update(delta, this.walls, [0xff4444, 0x44ff44, 0x4444ff, 0xffff44], currentWallColor);
   }
 }
 
