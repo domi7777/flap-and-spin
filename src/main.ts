@@ -16,7 +16,7 @@ let scoreText: Phaser.GameObjects.Text;
 let bestScore = Number(localStorage.getItem('bestScore') || 0);
 let bestScoreText: Phaser.GameObjects.Text;
 
-let deathCount = 0;
+let deathCount = Number(localStorage.getItem('deathCount') || 0);
 let deathCountText: Phaser.GameObjects.Text;
 
 let isRotating = false;
@@ -137,7 +137,9 @@ class MainScene extends Phaser.Scene {
     if (this.gameOver) return;
     this.gameOver = true;
     deathCount++;
+    localStorage.setItem('deathCount', String(deathCount));
     deathCountText.setText(`Deaths: ${deathCount}`);
+
     this.ball.setTint(0xff0000);
     this.physics.pause();
     // Show final score, best score, and retry button
