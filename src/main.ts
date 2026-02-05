@@ -44,6 +44,7 @@ class MainScene extends Phaser.Scene {
     score = 0;
     this.gameOver = false;
     this.physics.world.gravity.y = GRAVITY;
+    difficultyMultiplier = 1; // Reset difficulty multiplier on game start
 
     // Setup cameras first
     this.gameCamera = this.cameras.main;
