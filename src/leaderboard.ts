@@ -70,13 +70,25 @@ export async function getLeaderboardUid() {
 
 export async function savePlayerScore(uid: string, name: string, scoreValue: number) {
   try {
-    const document: Omit<LeaderboardEntry, 'id'> = {
-      userId: uid,
-      name: name,
-      score: scoreValue,
-      updatedAt: serverTimestamp(),
+    const docRef = doc(db, docPath, uid);
+    const existingDoc = await getDoc(docRef);
+
+    if (existingDoc.exists()) {
+      const updateDoc: Partial<LeaderboardEntry> = {
+        score: scoreValue,
+        updatedAt: serverTimestamp(),
+      };
+      await setDoc(docRef, updateDoc, { merge: true });
+    } else {
+      const createDoc: Omit<LeaderboardEntry, 'id'> = {
+        userId: uid,
+        name: name,
+        score: scoreValue,
+        updatedAt: serverTimestamp(),
+      };
+      await setDoc(docRef, createDoc);
     }
-    await setDoc(doc(db, docPath, uid), document);
+
     console.log('Score saved successfully!');
   } catch (error) {
     console.error('Error saving score:', error);
