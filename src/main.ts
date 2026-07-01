@@ -1,7 +1,7 @@
 import './style.css'
 import Phaser from 'phaser';
 import { CameraManager } from './CameraManager';
-import { clearOverlay, fetchLeaderboard, fetchUserBestScore, fetchUserRecord, getLeaderboardUid, savePlayerScore, showLeaderboardOverlay, showNameEntryOverlay } from './leaderboard';
+import { clearOverlay, fetchLeaderboard, fetchUserRecord, getLeaderboardUid, savePlayerScore, showLeaderboardOverlay, showNameEntryOverlay } from './leaderboard';
 
 const GAME_WIDTH = Math.min(window.innerWidth, 800);
 const GAME_HEIGHT = Math.min(window.innerHeight - 30, 800);

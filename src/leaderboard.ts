@@ -13,6 +13,8 @@ import {
   setDoc,
 } from 'firebase/firestore';
 
+import { escapeHtml } from './tools';
+
 const firebaseConfig = {
   apiKey: "AIzaSyC3xJsRS7dsa4p2Pt9wq2y-JUIR-sIY4AM",
   authDomain: "my-kiwi-games.firebaseapp.com",
@@ -86,7 +88,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
     const leaderboardQuery = query(
       collection(db, docPath),
       orderBy('score', 'desc'),
-      limit(10)
+      limit(100)
     );
     const querySnapshot = await getDocs(leaderboardQuery);
     return querySnapshot.docs.map((docSnap) => ({
@@ -146,7 +148,7 @@ export function showLeaderboardOverlay(scores: Array<LeaderboardEntry>, onRetry:
         (entry, index) =>
           `<div class="leaderboard-row">
                 <span class="leaderboard-rank">${index + 1}.</span>
-                <span class="leaderboard-name">${entry.name}</span>
+                <span class="leaderboard-name">${escapeHtml(entry.name ?? '')}</span>
                 <span class="leaderboard-score">${entry.score}</span>
               </div>`
       )
