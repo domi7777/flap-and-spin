@@ -67,7 +67,7 @@ export async function savePlayerScore(uid: string, name: string, scoreValue: num
       score: scoreValue,
       updatedAt: serverTimestamp(),
     }
-    await setDoc(doc(db, docPath, uid),document);
+    await setDoc(doc(db, docPath, uid), document);
     console.log('Score saved successfully!');
   } catch (error) {
     console.error('Error saving score:', error);
@@ -109,11 +109,15 @@ export function showLeaderboardOverlay(scores: Array<LeaderboardEntry>, onRetry:
       <h2>Leaderboard</h2>
       <div class="leaderboard-list">
         ${scores
-          .map(
-            (entry, index) =>
-              `<div class="leaderboard-row"><span class="leaderboard-rank">${index + 1}.</span><span class="leaderboard-name">${entry.name}</span><span class="leaderboard-score">${entry.score}</span></div>`
-          )
-          .join('')}
+      .map(
+        (entry, index) =>
+          `<div class="leaderboard-row">
+                <span class="leaderboard-rank">${index + 1}.</span>
+                <span class="leaderboard-name">${entry.name}</span><
+                span class="leaderboard-score">${entry.score}</span>
+              </div>`
+      )
+      .join('')}
       </div>
       <button id="retry-button">Retry</button>
     </div>
