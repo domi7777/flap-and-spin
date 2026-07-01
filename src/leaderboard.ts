@@ -13,13 +13,13 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyC3xJsRS7dsa4p2Pt9wq2y-JUIR-sIY4PM',
-  authDomain: 'my-kiwi-games.firebaseapp.com',
-  projectId: 'my-kiwi-games',
-  storageBucket: 'my-kiwi-games.firebasestorage.app',
-  messagingSenderId: '152877228068',
-  appId: '1:152877228068:web:1c231f083863b1ff8b1',
-  measurementId: 'G-XGZZ8MXJJQ',
+  apiKey: "AIzaSyC3xJsRS7dsa4p2Pt9wq2y-JUIR-sIY4AM",
+  authDomain: "my-kiwi-games.firebaseapp.com",
+  projectId: "my-kiwi-games",
+  storageBucket: "my-kiwi-games.firebasestorage.app",
+  messagingSenderId: "152877228068",
+  appId: "1:152877228068:web:1c231f08386318537ff8b1",
+  measurementId: "G-XGZZ8MXJJQ"
 };
 
 const app = initializeApp(firebaseConfig);
