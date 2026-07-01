@@ -119,12 +119,12 @@ class MainScene extends Phaser.Scene {
     this.ball.setTint(0xff0000);
     this.physics.pause();
 
-    if (this.runIsNewPersonalBest) {
+    // if (this.runIsNewPersonalBest) {
       this.createLeaderboardUI();
-      return;
-    }
+      // return;
+    // }
 
-    this.showGameOverPanel();
+    // this.showGameOverPanel();
   }
 
   showGameOverPanel() {
