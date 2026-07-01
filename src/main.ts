@@ -1,6 +1,7 @@
 import './style.css'
 import Phaser from 'phaser';
 import { CameraManager } from './CameraManager';
+import { clearOverlay, fetchLeaderboard, getLeaderboardUid, savePlayerScore, showLeaderboardOverlay, showNameEntryOverlay } from './leaderboard';
 
 const GAME_WIDTH = Math.min(window.innerWidth, 800);
 const GAME_HEIGHT = Math.min(window.innerHeight - 30, 800);
@@ -33,6 +34,8 @@ class MainScene extends Phaser.Scene {
   gameCamera!: Phaser.Cameras.Scene2D.Camera;
   uiElements: Phaser.GameObjects.Text[] = [];
   cameraManager!: CameraManager;
+  previousBestScore = bestScore;
+  runIsNewPersonalBest = false;
 
   constructor() {
     super('MainScene');
@@ -43,6 +46,8 @@ class MainScene extends Phaser.Scene {
   create() {
     score = 0;
     this.gameOver = false;
+    this.previousBestScore = bestScore;
+    this.runIsNewPersonalBest = false;
     this.physics.world.gravity.y = GRAVITY;
     difficultyMultiplier = 1; // Reset difficulty multiplier on game start
 
@@ -94,6 +99,53 @@ class MainScene extends Phaser.Scene {
     this.physics.add.overlap(this.ball, this.walls, this.handleGameOver, undefined, this);
   }
 
+  createLeaderboardUI() {
+    showNameEntryOverlay(score, async (name) => {
+      const uid = getLeaderboardUid();
+      await savePlayerScore(uid, name, score);
+      const scores = await fetchLeaderboard();
+      showLeaderboardOverlay(scores, () => this.scene.restart());
+    });
+  }
+
+  handleGameOver() {
+    console.warn('Game Over');
+    if (this.gameOver) return;
+    this.gameOver = true;
+    deathCount++;
+    localStorage.setItem('deathCount', String(deathCount));
+    deathCountText.setText(`Deaths: ${deathCount}`);
+
+    this.ball.setTint(0xff0000);
+    this.physics.pause();
+
+    if (this.runIsNewPersonalBest) {
+      this.createLeaderboardUI();
+      return;
+    }
+
+    this.showGameOverPanel();
+  }
+
+  showGameOverPanel() {
+    clearOverlay();
+    const overlay = document.createElement('div');
+    overlay.id = 'ui-overlay';
+    overlay.innerHTML = `
+      <div class="ui-card">
+        <h2>Game Over</h2>
+        <p>Score: <strong>${score}</strong></p>
+        <p>Best: <strong>${bestScore}</strong></p>
+        <button id="retry-button">Retry</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('retry-button')?.addEventListener('click', () => {
+      clearOverlay();
+      this.scene.restart();
+    });
+  }
+
   bounce() {
     if (this.gameOver) return;
     this.ball.setVelocityY(BOUNCE_VELOCITY);
@@ -141,41 +193,6 @@ class MainScene extends Phaser.Scene {
     this.uiCamera.ignore([topWall, bottomWall]);
   }
 
-  handleGameOver() {
-    console.warn('Game Over');
-    if (this.gameOver) return;
-    this.gameOver = true;
-    deathCount++;
-    localStorage.setItem('deathCount', String(deathCount));
-    deathCountText.setText(`Deaths: ${deathCount}`);
-
-    this.ball.setTint(0xff0000);
-    this.physics.pause();
-    // Show final score, best score, and retry button
-    const gameOverText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 - 60, `Game Over`, {
-      fontSize: '48px',
-      color: '#fff',
-      align: 'center',
-    }).setOrigin(0.5);
-    const finalScoreText = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2, `Score: ${score}\nBest: ${bestScore}`, {
-      fontSize: '32px',
-      color: '#fff',
-      align: 'center',
-    }).setOrigin(0.5);
-    const retryButton = this.add.text(GAME_WIDTH/2, GAME_HEIGHT/2 + 70, 'Retry', {
-      fontSize: '32px',
-      color: '#00eaff',
-      backgroundColor: '#222',
-      padding: { left: 24, right: 24, top: 8, bottom: 8 },
-      align: 'center',
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-    retryButton.on('pointerdown', () => this.scene.restart());
-
-    // Add to UI elements and update camera visibility
-    this.uiElements.push(gameOverText, finalScoreText, retryButton);
-    this.gameCamera.ignore(this.uiElements);
-  }
-
   update(_time: number, delta: number): void {
     if (this.ball.y > GAME_HEIGHT - BALL_RADIUS || this.ball.y < BALL_RADIUS) {
       this.handleGameOver();
@@ -193,6 +210,9 @@ class MainScene extends Phaser.Scene {
             bestScore = score;
             localStorage.setItem('bestScore', String(bestScore));
             bestScoreText.setText(`Best: ${bestScore}`);
+          }
+          if (score > this.previousBestScore) {
+            this.runIsNewPersonalBest = true;
           }
           this.cameraManager.startRotation(score); // Trigger camera rotation when score increases
 
