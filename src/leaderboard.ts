@@ -3,6 +3,7 @@ import { getAuth, signInAnonymously } from 'firebase/auth';
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   limit,
@@ -29,13 +30,14 @@ const docPath = 'flap-scores';
 
 let firebaseUid: string | null = null;
 
-signInAnonymously(auth)
+export const authReady = signInAnonymously(auth)
   .then((userCredential) => {
     firebaseUid = userCredential.user.uid;
     console.log('Player signed in with UID:', firebaseUid);
   })
   .catch((error) => {
     console.error('Anonymous sign-in failed:', error.code, error.message);
+    return Promise.reject(error);
   });
 
 export type LeaderboardEntry = {
@@ -46,17 +48,22 @@ export type LeaderboardEntry = {
   updatedAt?: any;
 };
 
-export function getLeaderboardUid() {
-  const storedUid = localStorage.getItem('fallbackUid');
+export async function getLeaderboardUid() {
   if (firebaseUid) {
     return firebaseUid;
   }
-  if (storedUid) {
-    return storedUid;
+
+  try {
+    await authReady;
+  } catch {
+    // Ignore auth failure and fall back to generated uid.
   }
-  const newUid = crypto.randomUUID();
-  localStorage.setItem('fallbackUid', newUid);
-  return newUid;
+
+  if (firebaseUid) {
+    return firebaseUid;
+  }
+
+  return crypto.randomUUID();
 }
 
 export async function savePlayerScore(uid: string, name: string, scoreValue: number) {
@@ -84,6 +91,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
     const querySnapshot = await getDocs(leaderboardQuery);
     return querySnapshot.docs.map((docSnap) => ({
       id: docSnap.id,
+      userId: docSnap.data().userId as string | undefined,
       name: docSnap.data().name as string,
       score: docSnap.data().score as number,
     }));
@@ -91,6 +99,31 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
     console.error('Error fetching leaderboard:', error);
     return [];
   }
+}
+
+export async function fetchUserRecord(uid: string): Promise<LeaderboardEntry | null> {
+  try {
+    const userDoc = await getDoc(doc(db, docPath, uid));
+    if (!userDoc.exists()) {
+      return null;
+    }
+    const data = userDoc.data();
+    return {
+      id: userDoc.id,
+      userId: data.userId as string | undefined,
+      name: data.name as string,
+      score: data.score as number,
+      updatedAt: data.updatedAt,
+    };
+  } catch (error) {
+    console.error('Error fetching user record:', error);
+    return null;
+  }
+}
+
+export async function fetchUserBestScore(uid: string): Promise<number> {
+  const record = await fetchUserRecord(uid);
+  return record?.score ?? 0;
 }
 
 export function clearOverlay() {
@@ -113,8 +146,8 @@ export function showLeaderboardOverlay(scores: Array<LeaderboardEntry>, onRetry:
         (entry, index) =>
           `<div class="leaderboard-row">
                 <span class="leaderboard-rank">${index + 1}.</span>
-                <span class="leaderboard-name">${entry.name}</span><
-                span class="leaderboard-score">${entry.score}</span>
+                <span class="leaderboard-name">${entry.name}</span>
+                <span class="leaderboard-score">${entry.score}</span>
               </div>`
       )
       .join('')}

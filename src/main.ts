@@ -1,7 +1,7 @@
 import './style.css'
 import Phaser from 'phaser';
 import { CameraManager } from './CameraManager';
-import { clearOverlay, fetchLeaderboard, getLeaderboardUid, savePlayerScore, showLeaderboardOverlay, showNameEntryOverlay } from './leaderboard';
+import { clearOverlay, fetchLeaderboard, fetchUserBestScore, fetchUserRecord, getLeaderboardUid, savePlayerScore, showLeaderboardOverlay, showNameEntryOverlay } from './leaderboard';
 
 const GAME_WIDTH = Math.min(window.innerWidth, 800);
 const GAME_HEIGHT = Math.min(window.innerHeight - 30, 800);
@@ -15,7 +15,7 @@ const WALL_INTERVAL = 1200; // ms
 
 let score = 0;
 let scoreText: Phaser.GameObjects.Text;
-let bestScore = Number(localStorage.getItem('bestScore') || 0);
+let bestScore = 0;
 let bestScoreText: Phaser.GameObjects.Text;
 
 let deathCount = Number(localStorage.getItem('deathCount') || 0);
@@ -34,6 +34,8 @@ class MainScene extends Phaser.Scene {
   gameCamera!: Phaser.Cameras.Scene2D.Camera;
   uiElements: Phaser.GameObjects.Text[] = [];
   cameraManager!: CameraManager;
+  currentUserUid: string | null = null;
+  currentUserName: string | null = null;
   previousBestScore = bestScore;
   runIsNewPersonalBest = false;
 
@@ -97,14 +99,40 @@ class MainScene extends Phaser.Scene {
     this.gameCamera.ignore(this.uiElements);
 
     this.physics.add.overlap(this.ball, this.walls, this.handleGameOver, undefined, this);
+    this.loadUserBestScore();
+  }
+
+  async loadUserBestScore() {
+    const uid = await getLeaderboardUid();
+    this.currentUserUid = uid;
+    const userRecord = await fetchUserRecord(uid);
+    if (userRecord) {
+      this.currentUserName = userRecord.name;
+      bestScore = userRecord.score;
+      this.previousBestScore = userRecord.score;
+    } else {
+      bestScore = 0;
+      this.previousBestScore = 0;
+    }
+    bestScoreText.setText(`Best: ${bestScore}`);
   }
 
   createLeaderboardUI() {
-    showNameEntryOverlay(score, async (name) => {
-      const uid = getLeaderboardUid();
-      await savePlayerScore(uid, name, score);
+    const saveScore = async (playerName: string) => {
+      const uid = await getLeaderboardUid();
+      await savePlayerScore(uid, playerName, score);
       const scores = await fetchLeaderboard();
       showLeaderboardOverlay(scores, () => this.scene.restart());
+    };
+
+    if (this.currentUserName) {
+      saveScore(this.currentUserName);
+      return;
+    }
+
+    showNameEntryOverlay(score, async (name) => {
+      this.currentUserName = name;
+      await saveScore(name);
     });
   }
 
@@ -208,7 +236,6 @@ class MainScene extends Phaser.Scene {
           scoreText.setText('Score: ' + score);
           if (score > bestScore) {
             bestScore = score;
-            localStorage.setItem('bestScore', String(bestScore));
             bestScoreText.setText(`Best: ${bestScore}`);
           }
           if (score > this.previousBestScore) {
