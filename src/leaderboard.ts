@@ -25,6 +25,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const docPath = 'flap-scores';
 
 let firebaseUid: string | null = null;
 
@@ -39,8 +40,10 @@ signInAnonymously(auth)
 
 export type LeaderboardEntry = {
   id: string;
-  playerName: string;
+  userId?: string;
+  name: string;
   score: number;
+  updatedAt?: any;
 };
 
 export function getLeaderboardUid() {
@@ -58,11 +61,13 @@ export function getLeaderboardUid() {
 
 export async function savePlayerScore(uid: string, name: string, scoreValue: number) {
   try {
-    await setDoc(doc(db, 'leaderboard', uid), {
-      playerName: name,
+    const document: Omit<LeaderboardEntry, 'id'> = {
+      userId: uid,
+      name: name,
       score: scoreValue,
       updatedAt: serverTimestamp(),
-    });
+    }
+    await setDoc(doc(db, docPath, uid),document);
     console.log('Score saved successfully!');
   } catch (error) {
     console.error('Error saving score:', error);
@@ -72,14 +77,14 @@ export async function savePlayerScore(uid: string, name: string, scoreValue: num
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   try {
     const leaderboardQuery = query(
-      collection(db, 'leaderboard'),
+      collection(db, docPath),
       orderBy('score', 'desc'),
       limit(10)
     );
     const querySnapshot = await getDocs(leaderboardQuery);
     return querySnapshot.docs.map((docSnap) => ({
       id: docSnap.id,
-      playerName: docSnap.data().playerName as string,
+      name: docSnap.data().name as string,
       score: docSnap.data().score as number,
     }));
   } catch (error) {
@@ -106,7 +111,7 @@ export function showLeaderboardOverlay(scores: Array<LeaderboardEntry>, onRetry:
         ${scores
           .map(
             (entry, index) =>
-              `<div class="leaderboard-row"><span class="leaderboard-rank">${index + 1}.</span><span class="leaderboard-name">${entry.playerName}</span><span class="leaderboard-score">${entry.score}</span></div>`
+              `<div class="leaderboard-row"><span class="leaderboard-rank">${index + 1}.</span><span class="leaderboard-name">${entry.name}</span><span class="leaderboard-score">${entry.score}</span></div>`
           )
           .join('')}
       </div>
