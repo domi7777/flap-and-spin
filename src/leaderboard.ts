@@ -78,7 +78,7 @@ export async function savePlayerScore(uid: string, name: string, scoreValue: num
     if (existingDoc.exists()) {
       const updateDocData: Partial<LeaderboardEntry> = {
         name,
-        score: scoreValue,
+        score: Math.max(scoreValue, existingDoc.data()?.score || 0),
         deaths: increment(1),
         updatedAt: serverTimestamp(),
       };
