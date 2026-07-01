@@ -6,6 +6,7 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  increment,
   limit,
   orderBy,
   query,
@@ -47,6 +48,7 @@ export type LeaderboardEntry = {
   userId?: string;
   name: string;
   score: number;
+  deaths?: number | any;
   updatedAt?: any;
 };
 
@@ -72,18 +74,21 @@ export async function savePlayerScore(uid: string, name: string, scoreValue: num
   try {
     const docRef = doc(db, docPath, uid);
     const existingDoc = await getDoc(docRef);
-
+  
     if (existingDoc.exists()) {
-      const updateDoc: Partial<LeaderboardEntry> = {
+      const updateDocData: Partial<LeaderboardEntry> = {
+        name,
         score: scoreValue,
+        deaths: increment(1),
         updatedAt: serverTimestamp(),
       };
-      await setDoc(docRef, updateDoc, { merge: true });
+      await setDoc(docRef, updateDocData, { merge: true });
     } else {
       const createDoc: Omit<LeaderboardEntry, 'id'> = {
         userId: uid,
-        name: name,
+        name,
         score: scoreValue,
+        deaths: 1,
         updatedAt: serverTimestamp(),
       };
       await setDoc(docRef, createDoc);
@@ -108,6 +113,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
       userId: docSnap.data().userId as string | undefined,
       name: docSnap.data().name as string,
       score: docSnap.data().score as number,
+      deaths: (docSnap.data().deaths as number | undefined) ?? 0,
     }));
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
@@ -127,6 +133,7 @@ export async function fetchUserRecord(uid: string): Promise<LeaderboardEntry | n
       userId: data.userId as string | undefined,
       name: data.name as string,
       score: data.score as number,
+      deaths: (data.deaths as number | undefined) ?? 0,
       updatedAt: data.updatedAt,
     };
   } catch (error) {
@@ -161,7 +168,8 @@ export function showLeaderboardOverlay(scores: Array<LeaderboardEntry>, onRetry:
           `<div class="leaderboard-row">
                 <span class="leaderboard-rank">${index + 1}.</span>
                 <span class="leaderboard-name">${escapeHtml(entry.name ?? '')}</span>
-                <span class="leaderboard-score">${entry.score}</span>
+                <span class="leaderboard-score">Score: ${entry.score}</span>
+                <span class="leaderboard-deaths">Deaths: ${entry.deaths ?? 0}</span>
               </div>`
       )
       .join('')}

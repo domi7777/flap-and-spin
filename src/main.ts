@@ -18,7 +18,7 @@ let scoreText: Phaser.GameObjects.Text;
 let bestScore = 0;
 let bestScoreText: Phaser.GameObjects.Text;
 
-let deathCount = Number(localStorage.getItem('deathCount') || 0);
+let deathCount = 0;
 let deathCountText: Phaser.GameObjects.Text;
 
 let currentWallColor = 0xff4444; // Default wall color
@@ -106,15 +106,20 @@ class MainScene extends Phaser.Scene {
     const uid = await getLeaderboardUid();
     this.currentUserUid = uid;
     const userRecord = await fetchUserRecord(uid);
+
     if (userRecord) {
       this.currentUserName = userRecord.name;
       bestScore = userRecord.score;
       this.previousBestScore = userRecord.score;
+      deathCount = userRecord.deaths || 0;
     } else {
       bestScore = 0;
       this.previousBestScore = 0;
+      deathCount = 0;
     }
+
     bestScoreText.setText(`Best: ${bestScore}`);
+    deathCountText.setText(`Deaths: ${deathCount}`);
   }
 
   createLeaderboardUI() {
@@ -141,7 +146,6 @@ class MainScene extends Phaser.Scene {
     if (this.gameOver) return;
     this.gameOver = true;
     deathCount++;
-    localStorage.setItem('deathCount', String(deathCount));
     deathCountText.setText(`Deaths: ${deathCount}`);
 
     this.ball.setTint(0xff0000);

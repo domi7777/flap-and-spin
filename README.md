@@ -90,8 +90,8 @@ Key constants can be adjusted in `src/main.ts`:
 ## 📊 Statistics
 
 - **Score**: Current game score (resets on death)
-- **Best Score**: Personal high score (persisted in localStorage)
-- **Deaths**: Total number of game overs (persisted in localStorage)
+- **Best Score**: Personal high score (persisted in firebase)
+- **Deaths**: Total number of game overs (persisted in firebase)
 
 ## 🏗️ Build & Deploy
 

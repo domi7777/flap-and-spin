@@ -95,7 +95,7 @@ body, html {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 32px 1fr 60px;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
   padding: 10px 0;
@@ -103,10 +103,20 @@ body, html {
 }
 
 .leaderboard-rank,
-.leaderboard-score {
+.leaderboard-score,
+.leaderboard-deaths {
   font-weight: 700;
 }
 
 .leaderboard-name {
   color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-score,
+.leaderboard-deaths {
+  font-size: 0.9rem;
+  color: #cfd8dc;
 }
