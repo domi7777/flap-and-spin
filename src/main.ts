@@ -43,7 +43,7 @@ class MainScene extends Phaser.Scene {
     super('MainScene');
   }
 
-  preload() {}
+  preload() { }
 
   create() {
     score = 0;
@@ -58,18 +58,18 @@ class MainScene extends Phaser.Scene {
     this.uiCamera = this.cameras.add(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
     // Add background rectangle (keep it below everything else)
-    const bg = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT, 0x222222).setDepth(0);
+    const bg = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x222222).setDepth(0);
     this.uiCamera.ignore(bg);
 
     // Use a graphics-generated texture for the ball
     const ballGfx = this.add.graphics();
     ballGfx.fillStyle(0x00eaff, 1);
     ballGfx.fillCircle(BALL_RADIUS, BALL_RADIUS, BALL_RADIUS);
-    ballGfx.generateTexture('ball', BALL_RADIUS*2, BALL_RADIUS*2);
+    ballGfx.generateTexture('ball', BALL_RADIUS * 2, BALL_RADIUS * 2);
     ballGfx.destroy();
-    this.ball = this.physics.add.image(GAME_WIDTH/2, GAME_HEIGHT-100, 'ball')
+    this.ball = this.physics.add.image(GAME_WIDTH / 2, GAME_HEIGHT - 100, 'ball')
       .setCircle(BALL_RADIUS)
-      .setDisplaySize(BALL_RADIUS*2, BALL_RADIUS*2)
+      .setDisplaySize(BALL_RADIUS * 2, BALL_RADIUS * 2)
       .setBounce(0.5)
       .setCollideWorldBounds(true);
     this.uiCamera.ignore(this.ball);
@@ -147,12 +147,7 @@ class MainScene extends Phaser.Scene {
     this.ball.setTint(0xff0000);
     this.physics.pause();
 
-    // if (this.runIsNewPersonalBest) {
-      this.createLeaderboardUI();
-      // return;
-    // }
-
-    // this.showGameOverPanel();
+    this.createLeaderboardUI();
   }
 
   showGameOverPanel() {
@@ -199,13 +194,13 @@ class MainScene extends Phaser.Scene {
     wallGfx.generateTexture('wall', WALL_WIDTH, 100);
     wallGfx.destroy();
     // Top wall
-    const topWall = this.walls.create(-WALL_WIDTH/2, gapY/2, 'wall')
+    const topWall = this.walls.create(-WALL_WIDTH / 2, gapY / 2, 'wall')
       .setDisplaySize(WALL_WIDTH, gapY)
       .setImmovable(true)
       .setVelocityX(adjustedWallSpeed);
     // Bottom wall
-    const bottomWall = this.walls.create(-WALL_WIDTH/2, gapY + adjustedWallGap + (GAME_HEIGHT-gapY-adjustedWallGap)/2, 'wall')
-      .setDisplaySize(WALL_WIDTH, GAME_HEIGHT-gapY-adjustedWallGap)
+    const bottomWall = this.walls.create(-WALL_WIDTH / 2, gapY + adjustedWallGap + (GAME_HEIGHT - gapY - adjustedWallGap) / 2, 'wall')
+      .setDisplaySize(WALL_WIDTH, GAME_HEIGHT - gapY - adjustedWallGap)
       .setImmovable(true)
       .setVelocityX(adjustedWallSpeed);
     // Ensure walls are not affected by gravity
